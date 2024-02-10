@@ -2,7 +2,7 @@ import homeassistant.core as ha
 
 import voluptuous as vol
 
-from timezonefinder import TimezoneFinder
+from tzwhere import tzwhere
 from homeassistant import core
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.service import async_register_admin_service
@@ -20,8 +20,8 @@ async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
 
     async def async_set_timezone_geo(call: ha.ServiceCall) -> None:
         """Service handler to set timezone by lat/lng"""
-        tzf = TimezoneFinder()
-        result = tzf.timezone_at(lat=call.data[ATTR_LATITUDE], lng=call.data[ATTR_LONGITUDE])
+        tz = tzwhere.tzwhere()
+        result = tz.tzNameAt(call.data[ATTR_LATITUDE], call.data[ATTR_LONGITUDE])
 
         if result is None:
             return
