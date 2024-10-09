@@ -2,7 +2,10 @@ import homeassistant.core as ha
 
 import voluptuous as vol
 
+import asyncio
+
 from timezonefinder import TimezoneFinder
+from functools import partial
 from homeassistant import core
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.service import async_register_admin_service
@@ -20,8 +23,13 @@ async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
 
     async def async_set_timezone_geo(call: ha.ServiceCall) -> None:
         """Service handler to set timezone by lat/lng"""
-        tzf = TimezoneFinder()
-        result = tzf.timezone_at(lat=call.data[ATTR_LATITUDE], lng=call.data[ATTR_LONGITUDE])
+        result = await hass.async_add_executor_job(
+            partial(
+                TimezoneFinder().timezone_at, 
+                lat=call.data[ATTR_LATITUDE], 
+                lng=call.data[ATTR_LONGITUDE]
+            )
+        )
 
         if result is None:
             return
