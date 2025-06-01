@@ -2,6 +2,7 @@
   "domain": "arvee",
   "name": "Arvee",
   "codeowners": ["@k3vmcd"],
+  "config_flow": true,
   "documentation": "https://github.com/k3vmcd/hass-arvee",
   "integration_type": "service",
   "iot_class": "local_polling",
