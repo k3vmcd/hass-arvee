@@ -1,27 +1,137 @@
-# Arvee for Home Assistant
+# Arvee Integration - Updated for Home Assistant 2025.5.3
 
-## Installation
+## Major Changes
 
-To install you can use HACS, or manually copy into `custom_components`
+### Key Improvements:
+1. **Replaced timezonefinder with tzfpy** - No more compilation requirements
+2. **Added fallback to timezonefinderL** - Lightweight alternative if tzfpy isn't available
+3. **Modern Home Assistant integration structure** - Fully compliant with HA 2025.5.3
+4. **Improved error handling** - Better logging and user feedback
+5. **Config flow support** - Modern setup through UI
 
-Once installed, it will provide the `arvee.set_timezone` and `arvee.set_geo_timezone` service, which functions just like the `homeassistant.set_location` service allowing you to change the timezone via automation, etc. Note that Home Assistant’s UI makes some assumptions regarding timezones, e.g. `America/New_York` is what they call “Eastern Time”. So if you set it to something else that is also EST (e.g. `America/Detroit`) the 'Timezone" drop down in the settings page will be blank. I don’t know what, if any negative impact that will have on other things so YMMV.
+### Why tzfpy?
+- **No compilation required** - Pure Python implementation
+- **Faster performance** - Optimized for speed
+- **Uses built-in zoneinfo** - Leverages Python 3.9+ standard library
+- **Drop-in replacement** - Compatible API with timezonefinder
+- **Better maintenance** - Actively maintained and HA-friendly
 
-This component will likely continue to expand in functionality specifically for RV / mobile installations of Home Assistant as necessary.
+## Installation Instructions
 
-The library uses the Python `timezonefinder` package to look up timezones completely offline. It takes a pretty good amount of time to load the first time because it has to build the database.
+### Method 1: HACS (Recommended)
+1. Add this repository as a custom repository in HACS
+2. Install the "Arvee" integration
+3. Restart Home Assistant
+4. Go to Settings → Devices & Services → Add Integration
+5. Search for "Arvee" and add it
 
-### NOTE ON CONTAINER-BASED HOME ASSISTANT
+### Method 2: Manual Installation
+1. Copy the entire `custom_components/arvee` folder to your Home Assistant `custom_components` directory
+2. Restart Home Assistant
+3. Go to Settings → Devices & Services → Add Integration
+4. Search for "Arvee" and add it
 
-The `timezonefinder` package requires the container to have compilers and build tools to install. You can read [here](https://github.com/home-assistant/core/issues/87682) as to why. To fix this you can log into the container with an interactive shell and install them manually:
-
+## File Structure
 ```
-$ docker exec -it homeassistant /bin/bash
-$ apk add build-base
+custom_components/arvee/
+├── __init__.py          # Main integration code
+├── config_flow.py       # Configuration flow
+├── const.py            # Constants
+├── manifest.json       # Integration metadata
+├── services.yaml       # Service definitions
+└── strings.json        # Localization strings
 ```
 
-Then probably will want to do a `docker restart homeassistant` to trigger it to try to rebuild everything again which should work.
+## Dependencies
+
+The integration will automatically install `tzfpy` which has no compilation requirements. If for some reason tzfpy is not available, it will fall back to `timezonefinderL` (lightweight version).
+
+**No more Docker build issues!** The new dependencies are pure Python and install without compilation.
 
 ## Services
 
-`arvee.set_timezone` - Provide a `timezone` key in `America/New_York` format to change the timezone of HASS dynamically
-`arvee.set_geo_timezone` - Provide `latitude` and `longitude` keys to lookup the timezone based on that location and set it automatically.
+### `arvee.set_timezone`
+Directly set the Home Assistant timezone.
+
+**Parameters:**
+- `timezone` (required): IANA timezone name (e.g., "America/New_York")
+
+**Example:**
+```yaml
+service: arvee.set_timezone
+data:
+  timezone: "America/Denver"
+```
+
+### `arvee.set_geo_timezone`
+Set timezone based on GPS coordinates.
+
+**Parameters:**
+- `latitude` (required): Latitude coordinate
+- `longitude` (required): Longitude coordinate
+
+**Example:**
+```yaml
+service: arvee.set_geo_timezone
+data:
+  latitude: 39.7392
+  longitude: -104.9903
+```
+
+## Migration from Old Version
+
+### Automatic Migration
+The new version is backward compatible with existing automations. Your existing service calls will continue to work without changes.
+
+### What's Changed
+1. **Dependencies**: Now uses `tzfpy` instead of `timezonefinder`
+2. **Installation**: No more Docker container modifications needed
+3. **Performance**: Faster timezone lookups
+4. **Setup**: Modern config flow instead of YAML configuration
+
+### Recommended Steps
+1. Remove the old integration files
+2. Install the new version using HACS or manual method
+3. Restart Home Assistant
+4. Add the integration through the UI
+5. Test your existing automations
+
+## Troubleshooting
+
+### "Cannot Connect" Error
+This usually means the timezone finding library isn't available. The integration should automatically install `tzfpy`, but if issues persist:
+
+1. Check Home Assistant logs for specific errors
+2. Manually install tzfpy: `pip install tzfpy`
+3. Restart Home Assistant
+
+### Service Not Available
+If services don't appear:
+1. Ensure the integration is properly installed
+2. Check that it's enabled in Settings → Devices & Services
+3. Restart Home Assistant
+4. Check logs for any error messages
+
+### Performance Issues
+The new tzfpy library is significantly faster than the original timezonefinder. First-time lookups might take a moment to initialize the timezone database, but subsequent lookups should be very fast.
+
+## Example Automation
+
+```yaml
+alias: "Update timezone when location changes"
+trigger:
+  - platform: state
+    entity_id: device_tracker.my_phone
+action:
+  - service: arvee.set_geo_timezone
+    data:
+      latitude: "{{ state_attr('device_tracker.my_phone', 'latitude') }}"
+      longitude: "{{ state_attr('device_tracker.my_phone', 'longitude') }}"
+```
+
+## Support
+
+For issues or questions:
+1. Check the Home Assistant logs for error messages
+2. Create an issue on the GitHub repository
+3. Include your Home Assistant version and full error logs
